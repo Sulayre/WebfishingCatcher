@@ -11,12 +11,13 @@ script/source = "extends Control
 var dir = Directory.new()
 var loaded_mods = {}
 var mods_folder = \"res://Catcher/mods\"
+var Hooker:Reference
 #todo: add dependencies to mods
 
-func _init():
-	print(\"Mod Loader Starting\")
-	var can_load:bool
-	OS.set_window_title(\"WEBFISHING v\" + str(Globals.GAME_VERSION) + \" (MODDED)\")
+#func _init():
+	#Hooker = load(\"res://hooker.gd\").new()
+	#Hooker.initialize()
+func _enter_tree():
 	if dir.open(universal_path(mods_folder)) == OK:
 		dir.list_dir_begin(true,true)
 		var mod_folder = dir.get_next()
@@ -28,10 +29,10 @@ func _init():
 		print(loaded_mods)
 		_load_autoloads()
 		get_tree().set_meta(\"mods\", loaded_mods)
-		#get_tree().change_scene(\"res://Scenes/Menus/Splash/splash.tscn\")
-	else:
-		printerr(\"mods folder missing, fix that!\")
-
+func _ready():
+	#OS.set_window_title(\"WEBFISHING v\" + str(Globals.GAME_VERSION) + \" (MODDED)\")
+	get_tree().change_scene(\"res://Scenes/Menus/Splash/splash.tscn\")
+	
 func load_mod(mod_path):
 	var mod_cfg = ConfigFile.new()
 	mod_cfg.load(\"res://Catcher/mods/\"+mod_path.plus_file(\"mod.cfg\"))
