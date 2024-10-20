@@ -1,4 +1,4 @@
-[b]This mod loader is currently deprecated, use [GDWeave]( https://github.com/NotNite/GDWeave) and [The Standalone Version of Lure for GDWeave](https://github.com/Sulayre/WebfishingLure) instead![/b]
+**This mod loader is currently deprecated, use [GDWeave]( https://github.com/NotNite/GDWeave) and [The Standalone Version of Lure for GDWeave](https://github.com/Sulayre/WebfishingLure) instead!**
 
 ![Catcher Logo](https://media.discordapp.net/attachments/1297300581102391296/1297300581274091573/image.png?ex=67156cd1&is=67141b51&hm=4ed4eac2f276cab12e12c0109edf850bb33a3283183d98907cd88e3b6f66b5b1&=&format=webp&quality=lossless)
 ## _An external mod loader for Webfishing and asset replacer written in pure GDScript_
