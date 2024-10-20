@@ -1,0 +1,120 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Assets/Themes/main.tres" type="Theme" id=1]
+[ext_resource path="res://Assets/Themes/secondary.tres" type="Theme" id=3]
+
+[sub_resource type="GDScript" id=1]
+resource_name = "CatcherInit"
+script/source = "extends Control
+# The Lure Mod Loader for WEBFISHING uses source code from the GUMM project.
+# please support the original project over at https://github.com/KoBeWi/Godot-Universal-Mod-Manager!
+var dir = Directory.new()
+var loaded_mods = {}
+var mods_folder = \"res://Catcher/mods\"
+#todo: add dependencies to mods
+
+func _init():
+	print(\"Mod Loader Starting\")
+	var can_load:bool
+	OS.set_window_title(\"WEBFISHING v\" + str(Globals.GAME_VERSION) + \" (MODDED)\")
+	if dir.open(universal_path(mods_folder)) == OK:
+		dir.list_dir_begin(true,true)
+		var mod_folder = dir.get_next()
+		while mod_folder != \"\":
+			if dir.current_is_dir():
+				load_mod(mod_folder)
+			mod_folder = dir.get_next()
+		print(\"Mods loading concluded.\")
+		print(loaded_mods)
+		_load_autoloads()
+		get_tree().set_meta(\"mods\", loaded_mods)
+		#get_tree().change_scene(\"res://Scenes/Menus/Splash/splash.tscn\")
+	else:
+		printerr(\"mods folder missing, fix that!\")
+
+func load_mod(mod_path):
+	var mod_cfg = ConfigFile.new()
+	mod_cfg.load(\"res://Catcher/mods/\"+mod_path.plus_file(\"mod.cfg\"))
+	var mod_name = mod_cfg.get_value(\"Mod Data\", \"name\", \"[unknown]\")
+	var mod_version = mod_cfg.get_value(\"Mod Data\", \"version\", \"???\")
+	var mod_id = mod_path
+	print(mod_name)
+	var pckpath = OS.get_executable_path().get_base_dir().plus_file(\"Catcher/mods/\"+mod_path.plus_file(\"mod.pck\"))
+	print(pckpath)
+	var loaded_pck = ProjectSettings.load_resource_pack(pckpath)
+	if !loaded_pck: print(\"error loading pck\")
+	var mod_ref = load(mods_folder.plus_file(mod_path).plus_file(\"mod.gd\")).new()
+	mod_ref.initialize(mod_path, get_tree())
+	if loaded_mods.has(mod_id):
+		print(\"mod already registered, make sure the id is unique.\")
+		return
+	var data = {
+		\"path\": \"res://Catcher/mods/\"+mod_path,
+		\"reference\": mod_ref,
+		\"name\": mod_name,
+		\"version\": mod_version,
+		\"icon\": mod_ref.load_texture(\"icon.png\"),
+		#\"active\": false
+	}
+	loaded_mods[mod_id] = data
+
+func _on_LoadMods_pressed():
+	for mod in loaded_mods.values():
+		if mod.active:
+			mod.reference.initialize(mod.path, get_tree())
+	get_tree().change_scene(\"res://Scenes/Menus/Splash/splash.tscn\")
+
+func toggle_mod(modid:String,enabled:bool):
+	loaded_mods[modid].active = enabled
+
+func universal_path(path:String) -> String:
+	if OS.has_feature(\"standalone\"):
+		return ProjectSettings.globalize_path(path)
+	else:
+		return path
+
+func _load_autoloads():
+	for id in loaded_mods.keys():
+		var mod = loaded_mods[id]
+		print(mod.path.plus_file(\"Autoload\")) #mod.path+\"/\"+\"Autoload\"
+		if dir.open(mod.path.plus_file(\"Autoload\")) == OK:
+			dir.list_dir_begin(true,true)
+			var autoload_file = dir.get_next()
+			while autoload_file != \"\":
+				if !dir.current_is_dir():
+					if autoload_file.ends_with(\".tscn\"):
+						var prefab:PackedScene = load(mod.path.plus_file(\"Autoload\").plus_file(autoload_file))
+						var node = get_tree().root.call_deferred(\"add_child\",prefab.instance())
+						print(node)
+				autoload_file = dir.get_next()
+		else:
+			print(\"Lure: Autoload folder not found for mod id \" + id + \", skipping.\")
+	
+"
+
+[node name="Catcher" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = SubResource( 1 )
+
+[node name="BG" type="Panel" parent="."]
+self_modulate = Color( 1, 1, 1, 0.109804 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource( 3 )
+
+[node name="LoadMods" type="Button" parent="BG"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -485.5
+margin_top = -50.0
+margin_right = 485.5
+margin_bottom = 50.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
+theme = ExtResource( 1 )
+text = "There was an error loading the mods, click here to load in regardless (not recommended)"
+
+[connection signal="pressed" from="BG/LoadMods" to="." method="_on_LoadMods_pressed"]

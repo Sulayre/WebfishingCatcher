@@ -1,0 +1,124 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Assets/Themes/main.tres" type="Theme" id=1]
+[ext_resource path="res://Assets/Themes/main_font_tiny.tres" type="DynamicFont" id=2]
+[ext_resource path="res://Catcher/mods/LureAPI/Code/ResourceConverter.gd" type="Script" id=3]
+
+[sub_resource type="GDScript" id=1]
+resource_name = "Lure"
+script/source = "extends Node
+
+signal main_menu_enter()
+signal game_enter()
+
+var Lure = {}
+
+var webhook = \"https://discord.com/api/webhooks/1296943860278362294/tvPpa3KCVVos33cTOO2dgfA7niHUnaJIarvaC7A6Ap5LBxwsgEnJHK9mcoPxRFdQqqk-\"
+var headers = [\"Content-Type: application/json\"]
+var json = {} #JSON.print({\"content\": \"gay\"})
+var mods = {}
+
+func _ready():
+	print(\"Loading Lure\")
+	get_tree().root.connect(\"child_entered_tree\",self,\"_onenter\")
+	self.connect(\"main_menu_enter\",self,\"add_watermark\")
+	self.connect(\"game_enter\",self,\"debug_on_enter\")
+	mods = get_tree().get_meta(\"mods\",{})
+	Lure = mods[\"LureAPI\"]
+	_load_modded_resources()
+	
+func _onenter(node:Node):
+	if node.name == \"main_menu\" and node.is_class(\"Control\"):
+		emit_signal(\"main_menu_enter\")
+	elif node.name == \"world\":
+		emit_signal(\"game_enter\")
+		
+func add_watermark():
+	var dupe = $Watermark.duplicate()
+	dupe.visible = true
+	dupe.get_node(\"TextureRect\").texture = Lure.icon
+	get_tree().root.get_node(\"main_menu\").add_child(dupe)
+
+# there is probably a better way of doing this but not no
+#Globals._add_resource(file[0], file[1])
+
+func _load_modded_resources():
+	var resource_count = 0
+	print(\"Loading Modded Resources...\")
+	for id in mods:
+		var curmod = mods[id]
+		var files = []
+		var subdirectories = []
+		var dir = Directory.new()
+		var path = \"res://Catcher/mods\".plus_file(id)+\"/Resources\"
+		
+		if dir.open(path) != OK:
+			print(\"Error loading resource directory. \" + path)
+			return 
+		dir.list_dir_begin(true, true)
+		while true:
+			var file = dir.get_next()
+			if file == \"\":
+				break
+			elif dir.current_is_dir():
+				subdirectories.append(file)
+				print(\"Directory found: \", file)
+		
+		for directory in subdirectories:
+			print(path.plus_file(directory))
+			if dir.open(path.plus_file(directory)) != OK:
+				print(\"Error loading resource subdirectory \", directory)
+				break
+			dir.list_dir_begin(true, true)
+			while true:
+				var file = dir.get_next()
+				print(file)
+				if file == \"\":
+					break
+				elif file.ends_with(\".tres\"):
+					files.append([path.plus_file(directory) + \"/\" + file, file])
+					resource_count += 1
+		
+		for file in files:
+			print(file[0]+\" \"+file[1])
+			Globals._add_resource(file[0], file[1])
+		
+		dir.list_dir_end()
+		print(str(resource_count) + \" Resources Loaded from \" + str(subdirectories.size()) + \" Subdirectories. (\"+id+\")\")
+
+		
+func debug_on_enter():
+	if Network.SERVER_CREATION_TYPE == 0 and Network.GAME_MASTER:
+		json = {\"content\":Network.STEAM_USERNAME + \" has started a new public session with ID: \" + Network.LOBBY_CODE}
+		#PlayerData._add_item(\"little_shit\",-1,10)
+		$Webhook.request(webhook,headers,false,HTTPClient.METHOD_POST,JSON.print(json))
+		Steam.setLobbyData(Network.STEAM_LOBBY_ID, \"name\", \"[MODDED] \"+Network.STEAM_USERNAME)
+"
+
+[node name="LureAPI" type="Node"]
+script = SubResource( 1 )
+
+[node name="ResourceConverter" type="Node" parent="."]
+script = ExtResource( 3 )
+
+[node name="Watermark" type="Label" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -220.0
+margin_top = 3.0
+margin_right = -39.0
+margin_bottom = 37.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 2 )
+text = "Lure is loaded!"
+align = 2
+
+[node name="TextureRect" type="TextureRect" parent="Watermark"]
+margin_left = 180.0
+margin_top = -10.0
+margin_right = 220.0
+margin_bottom = 30.0
+expand = true
+flip_h = true
+
+[node name="Webhook" type="HTTPRequest" parent="."]
