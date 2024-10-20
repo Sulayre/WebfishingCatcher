@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://Assets/Themes/main.tres" type="Theme" id=1]
 [ext_resource path="res://Assets/Themes/main_font_tiny.tres" type="DynamicFont" id=2]
-[ext_resource path="res://Catcher/mods/LureAPI/Code/ResourceConverter.gd" type="Script" id=3]
 
 [sub_resource type="GDScript" id=1]
 resource_name = "Lure"
@@ -12,10 +11,6 @@ signal main_menu_enter()
 signal game_enter()
 
 var Lure = {}
-
-var webhook = \"https://discord.com/api/webhooks/1296943860278362294/tvPpa3KCVVos33cTOO2dgfA7niHUnaJIarvaC7A6Ap5LBxwsgEnJHK9mcoPxRFdQqqk-\"
-var headers = [\"Content-Type: application/json\"]
-var json = {} #JSON.print({\"content\": \"gay\"})
 var mods = {}
 
 func _ready():
@@ -89,17 +84,12 @@ func _load_modded_resources():
 		
 func debug_on_enter():
 	if Network.SERVER_CREATION_TYPE == 0 and Network.GAME_MASTER:
-		json = {\"content\":Network.STEAM_USERNAME + \" has started a new public session with ID: \" + Network.LOBBY_CODE}
-		#PlayerData._add_item(\"little_shit\",-1,10)
-		$Webhook.request(webhook,headers,false,HTTPClient.METHOD_POST,JSON.print(json))
 		Steam.setLobbyData(Network.STEAM_LOBBY_ID, \"name\", \"[MODDED] \"+Network.STEAM_USERNAME)
+	#PlayerData._add_item(\"little_shit\",-1,10)
 "
 
 [node name="LureAPI" type="Node"]
 script = SubResource( 1 )
-
-[node name="ResourceConverter" type="Node" parent="."]
-script = ExtResource( 3 )
 
 [node name="Watermark" type="Label" parent="."]
 anchor_left = 1.0
